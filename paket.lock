@@ -1,0 +1,11 @@
+RESTRICTION: >= net452
+NUGET
+  remote: https://www.nuget.org/api/v2
+    FSharp.Core (4.3.4)
+    Huitian.EGIS.ShapeFileLib (4.5.6)
+    MonoGame.Framework.WindowsDX (3.6.0.1625)
+
+GROUP Build
+NUGET
+  remote: https://www.nuget.org/api/v2
+    FAKE (4.64.13)
