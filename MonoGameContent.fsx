@@ -1,11 +1,10 @@
-﻿module MonoGameContent
-
-#r "packages/build/FAKE/tools/FakeLib.dll"
+﻿#r "paket: groupref Build //"
+//#load "./.fake/monogamecontent.fsx/intellisense.fsx"
 
 open System
 open System.Text
 open System.IO
-open Fake
+open Fake.Core
 
 type Platform =
     | Windows
@@ -59,36 +58,30 @@ let MonoGameContentDefaults =
         TimeOut = TimeSpan.FromMilliseconds((float)Int32.MaxValue)
     }
 
-/// Tries to detect the working directory as specified in the parameters or via TeamCity settings
-/// [omit]
+let buildMonoGameContentArgs parameters contentFiles =
+    new StringBuilder()
+    |> Fake.Core.StringBuilder.appendQuotedIfNotNull parameters.OutputDir @"/outputDir:"
+    |> Fake.Core.StringBuilder.appendQuotedIfNotNull parameters.IntermediateDir @"/intermediateDir:"
+    |> Fake.Core.StringBuilder.appendWithoutQuotesIfNotNull parameters.Platform.ParamString @"/platform:"
+    |> Fake.Core.StringBuilder.appendWithoutQuotes (contentFiles |> Seq.map (fun cf -> @" /build:" + "\"" + cf + "\"") |> String.concat "")
+    |> Fake.Core.StringBuilder.toText
+
 let getWorkingDir parameters = 
-    Seq.find isNotNullOrEmpty [ parameters.WorkingDir
-                                environVar ("teamcity.build.workingDir")
+    Seq.find (Fake.Core.String.isNotNullOrEmpty) [ parameters.WorkingDir;
+                                Fake.Core.Environment.environVar ("teamcity.build.workingDir");
                                 "." ]
     |> Path.GetFullPath
 
-let buildMonoGameContentArgs parameters contentFiles =
-    new StringBuilder()
-    |> appendQuotedIfNotNull parameters.OutputDir @"/outputDir:"
-    |> appendQuotedIfNotNull parameters.IntermediateDir @"/intermediateDir:"
-    |> appendWithoutQuotesIfNotNull parameters.Platform.ParamString @"/platform:"
-    |> appendWithoutQuotes (contentFiles |> Seq.map (fun cf -> @" /build:" + "\"" + cf + "\"") |> String.concat "")
-    |> toText
-
 let MonoGameContent (setParams : MonoGameContentParams -> MonoGameContentParams) (content : string seq) =
-    let details = content |> separated ", "
     let parameters = MonoGameContentDefaults |> setParams
     let tool = parameters.ToolPath
     let args = buildMonoGameContentArgs parameters content
-    let result = 
-        ExecProcess (fun info -> 
-            info.FileName <- tool
-            info.WorkingDirectory <- getWorkingDir parameters
-            info.Arguments <- args) parameters.TimeOut
-    let errorDescription error = 
-        match error with
-        | FatalError x -> sprintf "MonoGame content building failed. Process finished with exit code %s (%d)." x error
-        | _ -> "OK"
-    match result with
-    | OK -> ()
-    | _ -> raise (BuildException(errorDescription result, content |> List.ofSeq))
+    let result =
+        Fake.Core.Process.execWithResult (fun info ->
+        { info with
+            FileName = tool
+            WorkingDirectory = getWorkingDir parameters
+            Arguments = args }) parameters.TimeOut
+    match result.OK with
+    | true -> ()
+    | false -> printf "MonoGame content building failed. Process finished with exit code %i." result.ExitCode

@@ -1,6 +1,7 @@
 source https://www.nuget.org/api/v2
 
-framework: >= net452
+storage: none
+
 nuget FSharp.Core
 nuget Huitian.EGIS.ShapeFileLib
 nuget MonoGame.Framework.WindowsDX
@@ -8,4 +9,10 @@ nuget MonoGame.Framework.WindowsDX
 group Build
 	source https://www.nuget.org/api/v2
 
-	nuget FAKE
+	storage: none
+
+    nuget Fake.Core.Target
+	nuget Fake.Core.String
+	nuget Fake.DotNet.MSBuild
+	nuget Fake.Core.Environment
+	nuget Fake.IO.FileSystem
