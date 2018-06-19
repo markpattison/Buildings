@@ -1,8 +1,8 @@
+#r "paket: groupref Build //"
+#load "./.fake/build.fsx/intellisense.fsx"
 #if !FAKE
   #r "netstandard"
 #endif
-#r "paket: groupref Build //"
-#load "./.fake/build.fsx/intellisense.fsx"
 
 open System
 open System.Text
